@@ -33,10 +33,10 @@ public class Start {
         }
         SendMail sendMail = new SendMail();
         while (true) {
-            logger.debug("进入while(true)循环");
+            logger.debug("while(true)");
 //            通过所有up主的mid号获取实时up主的投稿数，以map<up主mid号,投稿数>的形式储存
             currentUpVideoCount = VideoCount(list);
-            logger.debug("查询成功");
+            logger.debug("check");
 //            basicUpVideoCount和currentUpVideoCount的key（up主）相同的，其value值（投稿数）大小对比
             for (Map.Entry<Integer, Integer> entry1 : basicUpVideoCount.entrySet()) {
 
@@ -62,7 +62,7 @@ public class Start {
             HttpClient httpClient = new HttpClient();
             String urlString2 = "https://api.bilibili.com/x/space/arc/search?mid=";
             String pdata = "&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp";
-            logger.debug("拼凑url完成");
+            logger.debug("url");
             Map<Integer, Integer> map = new HashMap<Integer, Integer>();
 
             for (int i = 0; i < list.size(); i++) {
@@ -70,9 +70,21 @@ public class Start {
                 String jsonVideo = httpClient.client(urlString2, midFollow, pdata);
                 Videoinfo videoinfo = JSON.parseObject(jsonVideo, Videoinfo.class);
 
-                map.put(midFollow, videoinfo.getData().getPage().getCount());//up主mid对应其投稿数
+                List<Videoinfo.DataBean.ListBean.VlistBean> vlist = videoinfo.getData().getList().getVlist();
+
+                Integer count = videoinfo.getData().getPage().getCount();
+//                迭代vlist，取出VlistBean中key = mid 的value值与midFollow对比
+                for (int j = 0 ; j < vlist.size() ; j++){
+                    if (vlist.get(j).getMid() == midFollow){
+                        if (null != count && 0 != count){
+                            map.put(midFollow, count);//up主mid对应其投稿数
+                        }else {
+                            logger.error("cannot get count");
+                        }
+                    }
+                }
             }
-            logger.debug("获取关注人的投稿数成功");
+            logger.debug("投稿数");
 
             return map;
         }

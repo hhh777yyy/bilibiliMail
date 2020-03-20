@@ -4,6 +4,7 @@ import main.Start;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -19,7 +20,7 @@ public class SendMail {
     static Logger logger = Logger.getLogger(SendMail.class.getName());
 
     public static String myEmailAccount = "1119848245@qq.com";//邮箱账号
-    public static String myEmailPassword = "";//邮箱密码
+    public static String myEmailPassword = "omvhcosjewojhbig";//邮箱密码
     public static String myEmailSMTPHost = "smtp.qq.com";
 //    发送到指定的单个邮箱
     public static Boolean sendEmail(String text,String receiveEmail) throws MessagingException {
@@ -38,8 +39,9 @@ public class SendMail {
             props.setProperty("mail.smtp.socketFactory.fallback", "false");
             props.setProperty("mail.smtp.socketFactory.port", smtpPort);
             Session session = Session.getDefaultInstance(props);
-//            session.setDebug(true);                                 // 设置为debug模式, 可以查看详细的发送 log
+                               // 设置为debug模式, 可以查看详细的发送 log
             session.setDebugOut(new PrintStream(new  LoggingOutStream(Logger.getRootLogger(), Level.ERROR), true));
+            session.setDebug(true);
             MimeMessage message = createMimeMessage(session, myEmailAccount, receiveEmail,text);
             transport = session.getTransport();
             transport.connect(myEmailAccount, myEmailPassword);
