@@ -1,6 +1,6 @@
 package main;
 
-
+import static java.util.stream.Collectors.*;
 import bean.Followingsinfo;
 import bean.Videoinfo;
 import com.alibaba.fastjson.JSON;
@@ -10,10 +10,8 @@ import org.apache.log4j.Logger;
 import util.HttpClient;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Start {
@@ -60,6 +58,11 @@ public class Start {
         //获取up主的投稿数，以map<up主mid，up主投稿数>的形式存储
         public static Map<Integer, Integer>  VideoCount(List<Integer> list)  throws MalformedURLException {
             HttpClient httpClient = new HttpClient();
+
+            String jsonVideo;
+            Videoinfo videoinfo;
+//            List<Videoinfo.DataBean.ListBean.VlistBean> vlist;
+
             String urlString2 = "https://api.bilibili.com/x/space/arc/search?mid=";
             String pdata = "&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp";
             logger.debug("url");
@@ -67,21 +70,47 @@ public class Start {
 
             for (int i = 0; i < list.size(); i++) {
                 Integer midFollow = list.get(i);
-                String jsonVideo = httpClient.client(urlString2, midFollow, pdata);
-                Videoinfo videoinfo = JSON.parseObject(jsonVideo, Videoinfo.class);
+                jsonVideo = httpClient.client(urlString2, midFollow, pdata);
+                videoinfo = JSON.parseObject(jsonVideo, Videoinfo.class);
 
-                List<Videoinfo.DataBean.ListBean.VlistBean> vlist = videoinfo.getData().getList().getVlist();
+                while (videoinfo == null || jsonVideo == null){
+                    logger.debug("videoinfo为空");
+                    jsonVideo = httpClient.client(urlString2, midFollow, pdata);
+                    videoinfo = JSON.parseObject(jsonVideo, Videoinfo.class);
+                }
 
-                Integer count = videoinfo.getData().getPage().getCount();
+                Optional<Videoinfo> videoinfoOpt = Optional.of(videoinfo);
+                Optional<List<Videoinfo.DataBean.ListBean.VlistBean>> vlistOpt = videoinfoOpt.map(Videoinfo::getData)
+                                    .map(Videoinfo.DataBean::getList)
+                                    .map(Videoinfo.DataBean.ListBean::getVlist);
+
+//                vlist = videoinfo.getData().getList().getVlist();
+//                List<Videoinfo.DataBean.ListBean.VlistBean> vlist = collect(vlistOpt,toList());
+                List<List<Videoinfo.DataBean.ListBean.VlistBean>> vlist = vlistOpt.
+                        map(Collections::singletonList).
+                        orElse(Collections.emptyList());
+//                System.out.println(vlist.size());
+
+
+                Optional<Integer> countOpt =videoinfoOpt.map(Videoinfo::getData)
+                        .map(Videoinfo.DataBean::getPage)
+                        .map(Videoinfo.DataBean.PageBean::getCount);
+
+
+                List<Integer> count = countOpt.
+                        map(Collections::singletonList).
+                        orElse(Collections.emptyList());
+//                Integer count = videoinfo.getData().getPage().getCount();
 //                迭代vlist，取出VlistBean中key = mid 的value值与midFollow对比
                 for (int j = 0 ; j < vlist.size() ; j++){
-                    if (vlist.get(j).getMid() == midFollow){
-                        if (null != count && 0 != count){
-                            map.put(midFollow, count);//up主mid对应其投稿数
-                        }else {
-                            logger.error("cannot get count");
+                    for (int z = 0 ; z < vlist.get(j).size() ; z++)
+                        if (vlist.get(j).get(z).getMid() == midFollow){
+                            if (null != count && 0 != count.get(j)){
+                                map.put(midFollow, count.get(j));//up主mid对应其投稿数
+                            }else {
+                                logger.error("cannot get count");
+                            }
                         }
-                    }
                 }
             }
             logger.debug("投稿数");
