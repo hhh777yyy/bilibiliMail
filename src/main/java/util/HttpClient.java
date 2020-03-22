@@ -1,54 +1,39 @@
 package util;
 
 import java.io.*;
-import java.net.MalformedURLException;
+import java.net.HttpURLConnection;
+
 import java.net.URL;
-import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+
 
 public class HttpClient {
 
-    public String client(String urlString,Integer mid) throws MalformedURLException {
+    public String client(String urlString,Integer mid,String pdata) {
         StringBuilder json = new StringBuilder();
-        URL urlObject = new URL(urlString+mid);
+        InputStream inStream ;
+        URL urlObject ;
+        HttpURLConnection conn;
+
         try {
-//            URL urlObject = new URL(url);
-            URLConnection uc = urlObject.openConnection();
-            // 设置为utf-8的编码 解决中文乱码
-            BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), "utf-8"));
-            String inputLine = null;
-            while ((inputLine = in.readLine()) != null) {
-                json.append(inputLine);
-            }
-            in.close();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return json.toString();
-    }
+            urlObject = new URL(urlString+mid+pdata);
+            conn = (HttpURLConnection)urlObject.openConnection();
 
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("connection","Keep-Alive");
+            conn.connect();
 
-    public String client(String urlString,Integer mid,String pdata)   throws MalformedURLException{
-        StringBuilder json = new StringBuilder();
-        URL urlObject = new URL(urlString+mid+pdata);
-        try {
-
-//            URL urlObject = new URL(url);
-            URLConnection uc = urlObject.openConnection();
-
-//            System.out.println(uc.getConnectTimeout());
+            inStream = conn.getInputStream();
 
             // 设置为utf-8的编码 解决中文乱码
-            BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), "utf-8"));
-            String inputLine = null;
+            BufferedReader in = new BufferedReader(new InputStreamReader(inStream, StandardCharsets.UTF_8));
+            String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 json.append(inputLine);
             }
 
             in.close();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
